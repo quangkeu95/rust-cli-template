@@ -12,7 +12,10 @@ cargo generate quangkeu95/rust-cli-template
 ```
 
 ## Install dependencies
-
+After generating a new project, run the following command:
+```bash
+cargo build
+```
 <!-- ### Cargo
 
 * Install the rust toolchain in order to have cargo installed by following
