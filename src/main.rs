@@ -1,5 +1,6 @@
 use anyhow;
 use dotenvy::dotenv;
+// use {{crate_name}}::{cli::Cli, config::APP_CONFIG_INSTANCE, telemetry};
 use {{crate_name}}::{cli::Cli, config::APP_CONFIG_INSTANCE, telemetry};
 use std::str::FromStr;
 use tracing::log::LevelFilter;
