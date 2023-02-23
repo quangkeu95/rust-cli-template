@@ -1,9 +1,11 @@
-use std::{env::VarError, str::FromStr};
-
+use clap::crate_name;
 use derive_builder::Builder;
+use std::str::FromStr;
 use tracing::log::LevelFilter;
 use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+
+use crate::{config::APP_CONFIG_INSTANCE, errors::AppError};
 
 #[derive(Debug, Builder)]
 pub struct TracingOptions {
@@ -13,9 +15,22 @@ pub struct TracingOptions {
     pub tower_http_level: LevelFilter,
 }
 
-pub fn init_tracing(crate_name: String, options: TracingOptions) {
-    let crate_level = options.crate_level.as_str().to_lowercase();
-    let tower_http_level = options.tower_http_level.as_str().to_lowercase();
+pub fn init_tracing() -> Result<(), AppError> {
+    let config = &APP_CONFIG_INSTANCE;
+    let crate_log_level =
+        LevelFilter::from_str(config.log_level.as_str()).unwrap_or_else(|_| LevelFilter::Info);
+    let http_log_level =
+        LevelFilter::from_str(config.http_server.log_level.as_str()).unwrap_or(LevelFilter::Info);
+
+    let tracing_options = TracingOptionsBuilder::default()
+        .crate_level(crate_log_level)
+        .tower_http_level(http_log_level)
+        .build()
+        .map_err(|err| AppError::ConfigurationError(err.to_string()))?;
+
+    let crate_name = crate_name!().to_owned().replace("-", "_");
+    let crate_level = tracing_options.crate_level.as_str().to_lowercase();
+    let tower_http_level = tracing_options.tower_http_level.as_str().to_lowercase();
 
     let env_filter_level = format!(
         "{}={},tower_http={}",
@@ -34,18 +49,6 @@ pub fn init_tracing(crate_name: String, options: TracingOptions) {
         .with(JsonStorageLayer)
         .with(formatting_layer)
         .init();
-}
 
-pub fn parse_log_level(
-    env_var: Result<String, VarError>,
-    default_value_opt: Option<LevelFilter>,
-) -> LevelFilter {
-    let default_value = default_value_opt.unwrap_or_else(|| LevelFilter::Off);
-    match env_var {
-        Ok(log_level) => match LevelFilter::from_str(log_level.as_str()) {
-            Ok(filter_level) => filter_level,
-            Err(_) => default_value,
-        },
-        Err(_) => default_value,
-    }
+    Ok(())
 }

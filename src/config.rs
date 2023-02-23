@@ -1,13 +1,19 @@
 use config::{Config, File};
 use once_cell::sync::Lazy;
 use serde::Deserialize;
-use tracing::info;
 
 use crate::errors::AppError;
+
+/* -------------------------------------------------------------------------- */
+/*                                   MODULES                                  */
+/* -------------------------------------------------------------------------- */
+mod http_server;
+pub use http_server::*;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct AppConfig {
     pub log_level: String,
+    pub http_server: HttpServer,
 }
 
 impl AppConfig {
@@ -22,7 +28,7 @@ impl AppConfig {
         let environment: Environment = get_app_environment()?;
         let environment_filename = format!("{}.toml", environment.as_str());
 
-        info!("Using APP_ENVIRONMENT = {:?}", environment);
+        println!("Using APP_ENVIRONMENT = {:?}", environment);
 
         let s = Config::builder()
             // Start off by merging in the "default" configuration file
